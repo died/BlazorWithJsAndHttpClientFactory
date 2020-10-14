@@ -1,0 +1,73 @@
+﻿@page "/fetchweather"
+@using BlazorApp1.Data
+
+@inject OpenWeatherMapService ForecastService
+@inject IJSRuntime JsRuntime
+
+<h3>FetchWeather</h3>
+
+@if (_weather == null)
+{
+    <p><em>Loading...</em></p>
+    @*<button class="btn btn-primary" @onclick="GetForecast">Click</button>*@
+}
+else
+{
+    <h2>@_weather.City</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Temp</th>
+                <th>Rain</th>
+                <th>Cloud</th>
+                <th>Summary</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var forecast in _weather.Data)
+            {
+            <tr>
+                <td>@forecast.DateText</td>
+                <td>@forecast.Temperature</td>
+                <td>@forecast.Rain</td>
+                <td>@forecast.Cloud</td>
+                <td>@forecast.Summary</td>
+            </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private OwmWeather _weather;
+    private static Action _action;
+    //default loc set to New York
+    private static double _lat = 40.730610;
+    private static double _lon = -73.935242;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await base.OnAfterRenderAsync(firstRender);
+        if (firstRender)
+        {
+            // See warning about memory above in the article
+            _action = GetForecast;
+            await JsRuntime.InvokeVoidAsync("geoJsFunctions.getLocation");
+        }
+    }
+
+    [JSInvokable]
+    public static void GetGeo(double lat, double lon)
+    {
+
+        _lat = lat;
+        _lon = lon;
+        _action.Invoke();
+    }
+
+    private async void GetForecast()
+    {
+        _weather = await ForecastService.GetForecastAsync(_lat, _lon);
+        StateHasChanged();  //force refresh
+    }
+}
