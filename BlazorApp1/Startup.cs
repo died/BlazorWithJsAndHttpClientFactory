@@ -4,6 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using BlazorApp1.Data;
+using BlazorApp1.Models;
+using Hangfire;
+using Hangfire.MemoryStorage;
 
 namespace BlazorApp1
 {
@@ -22,10 +25,21 @@ namespace BlazorApp1
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
+            services.AddResponseCompression();
+
+            services.Configure<ApiOptions>(Configuration.GetSection(ApiOptions.ApiSetting));
+
+            services.AddHangfire(config =>
+            {
+                config.UseMemoryStorage();
+            });
+            services.AddHangfireServer();
 
             services.AddHttpClient<OpenWeatherMapService>();
+            services.AddHttpClient<IFxbitService, FxbitService>();
+
             services.AddSingleton<WeatherForecastService>();
-            
+            services.AddSingleton<ExchangeService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,9 +55,16 @@ namespace BlazorApp1
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-
+            app.UseResponseCompression();
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            #region hangfire
+            //if need dashboard
+            app.UseHangfireDashboard();
+            //start up job
+            RecurringJob.AddOrUpdate<IFxbitService>(x => x.GetExchangeRate(), Cron.Minutely);
+            #endregion
 
             app.UseRouting();
 

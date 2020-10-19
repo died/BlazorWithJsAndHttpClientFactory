@@ -1,0 +1,42 @@
+﻿@page "/exchangeRate"
+@using BlazorApp1.Data
+@inject ExchangeService Fxbit
+<h3>ExchangeRate</h3>
+@if (_data == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+        <tr>
+            <th>BuyRate</th>
+            <th>SellRate</th>
+            <th>UpdatedTimestamp</th>
+        </tr>
+        </thead>
+        <tbody>
+        @{
+            <tr>
+                <td>@_data.BuyRate</td>
+                <td>@_data.SellRate</td>
+                <td>@_data.UpdatedTimestamp</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+<div>@_raw</div>
+
+@code {
+    private dynamic _data;
+    private string _raw;
+
+    protected override void OnInitialized()
+    {
+        _raw = Fxbit.GetRawRate();
+        _data = Fxbit.GetExchangeRate("BTC","JPY");
+    }
+}

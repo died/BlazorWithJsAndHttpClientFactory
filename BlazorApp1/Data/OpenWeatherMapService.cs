@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading.Tasks;
+using BlazorApp1.Models;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
 namespace BlazorApp1.Data
@@ -9,21 +11,28 @@ namespace BlazorApp1.Data
     public class OpenWeatherMapService
     {
         private readonly HttpClient _httpClient;
-        //Go https://openweathermap.org/guide to get an API key
-        private const string OwmApiKey = "your key";
+        private readonly ApiOptions _api;
 
-        public OpenWeatherMapService(HttpClient httpClient)
+        public OpenWeatherMapService(HttpClient httpClient, IOptions<ApiOptions> settings)
         {
             _httpClient = httpClient;
+            _api = settings.Value;
         }
 
+        /// <summary>
+        /// Get owm forecast by geolocation
+        /// </summary>
+        /// <param name="lat"></param>
+        /// <param name="lon"></param>
+        /// <returns></returns>
         public Task<OwmWeather> GetForecastAsync(double lat, double lon)
         {
             var weather = new OwmWeather();
             var list = new List<OwmWeatherData>();
+
             if (lat != 0.0 && lon != 0.0)
             {
-                var url = new Uri($"https://api.openweathermap.org/data/2.5/forecast?lat={lat}&lon={lon}&appid={OwmApiKey}&units=metric");
+                var url = new Uri($"{_api.OpenWeatherMap.Url}Forecast?lat={lat}&lon={lon}&appid={_api.OpenWeatherMap.ApiKey}&units=metric");
                 var response = _httpClient.GetStringAsync(url).Result;
                 var data = JsonConvert.DeserializeObject<OwmForecast>(response);
                 weather.City = data.City.Name;
